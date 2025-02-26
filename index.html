@@ -1,21 +1,207 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ljh+</title>
-    <link rel="stylesheet" href="style.css">
+    <title>清新知识库</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --secondary: #2196F3;
+            --accent: #FF9800;
+            --light: #F5F5F5;
+            --dark: #212121;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            line-height: 1.8;
+            color: var(--dark);
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            color: white;
+            padding: 4rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .article-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        .article-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border-left: 4px solid var(--accent);
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .article-title {
+            color: var(--dark);
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .article-date {
+            color: #757575;
+            font-size: 0.9rem;
+        }
+
+        .article-excerpt {
+            color: #616161;
+            margin: 1rem 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .tag {
+            background: var(--light);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+
+        #article-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .back-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin: 1rem 0;
+        }
+
+        .back-btn:hover {
+            background: #45a049;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--secondary);
+        }
+    </style>
 </head>
 <body>
-    <div class="background"></div>
-    <form>
-        //<input type="radio" id="213">
-        //<label for="213">xs</label>
-    </form>
-    <button id="button">点我！</button>
+    <div class="header">
+        <div class="container">
+            <h1>📚 知识花园</h1>
+            <p>记录与分享的角落</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="article-list" class="article-grid"></div>
+        <div id="article-view" style="display:none;">
+            <button class="back-btn" onclick="showList()"><i class="fas fa-arrow-left"></i> 返回列表</button>
+            <div id="article-content"></div>
+        </div>
+        <div id="loading" class="loading"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>
+    </div>
+
     <script>
-        const button=document.getElementById('button');
-        button.addEventListener('click',function(){alert('xsxsxs')});
+        // 配色方案
+        const colors = {
+            tech: '#2196F3',
+            life: '#4CAF50',
+            thought: '#FF9800'
+        }
+
+        // 文章配置
+        const loadArticles = async () => {
+            const res = await fetch('articles.json')
+            return await res.json()
+        }
+
+        // 渲染文章列表
+        const renderList = async () => {
+            toggleLoading(true)
+            const articles = await loadArticles()
+            const grid = document.getElementById('article-list')
+            
+            grid.innerHTML = articles.map(article => `
+                <div class="article-card" onclick="showArticle('${article.id}')">
+                    <div class="card-header">
+                        <div class="article-date">${article.date}</div>
+                        <div class="tag" style="background:${colors[article.category] || '#eee'}">
+                            ${article.category}
+                        </div>
+                    </div>
+                    <h2 class="article-title">${article.title}</h2>
+                    <p class="article-excerpt">${article.excerpt}</p>
+                </div>
+            `).join('')
+            
+            toggleLoading(false)
+        }
+
+        // 显示文章详情
+        const showArticle = async (id) => {
+            toggleLoading(true)
+            const res = await fetch(`articles/${id}.txt`)
+            const content = await res.text()
+            
+            document.getElementById('article-list').style.display = 'none'
+            document.getElementById('article-view').style.display = 'block'
+            document.getElementById('article-content').innerHTML = 
+                content.split('\n').map(line => `<p>${line}</p>`).join('')
+            
+            toggleLoading(false)
+        }
+
+        // 返回列表
+        const showList = () => {
+            document.getElementById('article-list').style.display = 'grid'
+            document.getElementById('article-view').style.display = 'none'
+        }
+
+        // 加载状态
+        const toggleLoading = (show) => {
+            document.getElementById('loading').style.display = show ? 'block' : 'none'
+        }
+
+        // 初始化
+        window.onload = renderList
     </script>
 </body>
 </html>
+
